@@ -60,7 +60,8 @@ def clean_chart(ax):
 # =========================
 @st.cache_data
 def load_data():
-    data_dir = Path("D:/submission/Bike-sharing-dataset")
+from pathlib import Path
+    data_dir = Path(__file__).parent / "data"
 
     day_df = pd.read_csv(data_dir / "day.csv")
     hour_df = pd.read_csv(data_dir / "hour.csv")
