@@ -60,8 +60,7 @@ def clean_chart(ax):
 # =========================
 @st.cache_data
 def load_data():
-from pathlib import Path
-    data_dir = Path(__file__).parent / "data"
+    data_dir = Path(__file__).resolve().parent / "data"
 
     day_df = pd.read_csv(data_dir / "day.csv")
     hour_df = pd.read_csv(data_dir / "hour.csv")
@@ -215,33 +214,7 @@ with col4:
 
 
 # =========================
-# 1. CASUAL VS REGISTERED
-# =========================
-st.subheader("Perbandingan Casual vs Registered")
-
-user_sum = filtered_day[["casual", "registered"]].sum()
-colors = ["#FFCAD4", "#A8DADC"]
-
-fig, ax = plt.subplots(figsize=(4.5, 4.5))
-ax.pie(
-    user_sum,
-    labels=user_sum.index,
-    autopct="%1.1f%%",
-    colors=colors,
-    startangle=90,
-    wedgeprops={"edgecolor": "white"}
-)
-ax.set_title("Perbandingan Casual vs Registered")
-st.pyplot(fig)
-
-st.markdown("""
-**Insight:** Pengguna registered mendominasi jumlah penyewaan sepeda,
-menunjukkan bahwa layanan lebih banyak digunakan oleh pelanggan tetap.
-""")
-
-
-# =========================
-# 2. TREN HARIAN
+# TREN HARIAN
 # =========================
 st.subheader("Tren Penyewaan Sepeda Harian")
 
@@ -264,7 +237,7 @@ dengan fluktuasi yang dipengaruhi faktor waktu dan musim.
 
 
 # =========================
-# 3. POLA PER JAM
+# POLA PER JAM
 # =========================
 st.subheader("Pola Penyewaan Sepeda per Jam")
 
@@ -286,7 +259,7 @@ yang menunjukkan pola penggunaan untuk aktivitas rutin.
 
 
 # =========================
-# 4. MUSIM DAN CUACA
+# MUSIM DAN CUACA
 # =========================
 st.subheader("Pengaruh Musim dan Cuaca")
 
@@ -368,9 +341,257 @@ st.markdown("""
 sedangkan cuaca buruk seperti hujan atau salju menurunkan jumlah penyewaan.
 """)
 
+# =========================
+# Distribusi
+# =========================
+st.subheader("Distribusi Penyewaan Sepeda")
+
+fig, ax = plt.subplots(figsize=(6,4))
+sns.histplot(filtered_day["cnt"], bins=30, kde=True, color="#A8DADC", ax=ax)
+
+ax.set_title("Distribusi Jumlah Penyewaan")
+ax.set_xlabel("Jumlah Penyewaan")
+ax.set_ylabel("Frekuensi")
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Distribusi penyewaan sepeda cenderung terpusat pada kisaran menengah dengan sedikit kemiringan ke kanan, menunjukkan adanya beberapa hari dengan penyewaan tinggi.
+""")
+# =========
+# BOXPLOT
+# =========
+st.subheader("Boxplot Penyewaan Sepeda")
+
+fig, ax = plt.subplots(figsize=(6,4))
+sns.boxplot(x=filtered_day["cnt"], color="#FFCAD4", ax=ax)
+
+ax.set_title("Boxplot Penyewaan Sepeda")
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Sebaran penyewaan cukup luas dengan median di tengah serta variasi nilai tinggi, meskipun tidak banyak outlier ekstrem.
+""")
+
+# ====
+# KDE
+# ====
+st.subheader("KDE Plot Penyewaan Sepeda")
+
+fig, ax = plt.subplots(figsize=(6,4))
+sns.kdeplot(filtered_day["cnt"], fill=True, color="#4C72B0", ax=ax)
+
+ax.set_title("KDE Plot Penyewaan")
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Distribusi penyewaan mendekati normal dengan puncak pada nilai menengah dan variasi permintaan yang cukup tinggi.
+""")
+# ============
+# CORRELATION
+# ============
+st.subheader("Correlation Matrix Antar Variabel")
+
+fig, ax = plt.subplots(figsize=(10,6))
+
+corr = filtered_day.corr(numeric_only=True)
+
+sns.heatmap(
+    corr,
+    annot=True,
+    fmt=".2f",
+    cmap="coolwarm",
+    center=0,
+    linewidths=0.5,
+    ax=ax
+)
+
+ax.set_title("Correlation Matrix Antar Variabel", fontsize=14, weight='bold')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
+
+plt.tight_layout()
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Variabel registered memiliki korelasi sangat kuat dengan jumlah penyewaan, sementara temperatur juga berpengaruh positif terhadap peningkatan penyewaan. Selain itu variabel weathersit berkorelasi negatif dengan cnt, menunjukkan bahwa kondisi cuaca buruk menurunkan jumlah penyewaan sepeda. 
+""")
+# ============
+# SCATTER PLOT
+# ============
+st.subheader("Pengaruh Temperatur terhadap Penyewaan")
+
+fig, ax = plt.subplots(figsize=(6,4))
+
+sns.scatterplot(
+    data=filtered_day,
+    x='temp',
+    y='cnt',
+    ax=ax
+)
+
+ax.set_title("Pengaruh Temperatur terhadap Penyewaan")
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Terdapat hubungan positif antara temperatur dan jumlah penyewaan, di mana semakin tinggi suhu, penyewaan cenderung meningkat.
+""")
+# ========
+# PAIRPLOT
+# ========
+st.subheader("Hubungan Antar Variabel")
+
+pairplot_fig = sns.pairplot(
+    filtered_day[['cnt','temp','hum','windspeed']],
+)
+
+st.pyplot(pairplot_fig)
+
+st.markdown("""
+**Insight:** Temperatur memiliki hubungan positif dengan penyewaan, sementara kelembapan dan kecepatan angin cenderung memiliki pengaruh negatif meskipun tidak terlalu kuat.
+""")
+
+# ========
+# Q-Q PLOT
+# ========
+import scipy.stats as stats
+
+st.subheader("Q-Q Plot")
+
+fig, ax = plt.subplots(figsize=(6,4))
+stats.probplot(filtered_day["cnt"], dist="norm", plot=ax)
+
+ax.set_title("Q-Q Plot")
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Sebagian besar data mengikuti distribusi normal, meskipun terdapat sedikit penyimpangan pada bagian ekor.
+""")
 
 # =========================
-# 5. WORKING DAY VS WEEKEND
+# Countplot musim
+# =========================
+st.subheader("Distribusi Jumlah Hari Berdasarkan Musim")
+
+season_order = ["Spring", "Summer", "Fall", "Winter"]
+season_colors = ["#A8DADC", "#FFE5B4", "#FFAFCC", "#BDE0FE"]
+
+fig, ax = plt.subplots(figsize=(8,5))
+
+sns.countplot(
+    data=filtered_day,
+    x="season_label",
+    hue="season_label",
+    order=season_order,
+    palette=season_colors,
+    legend=False,
+    ax=ax
+)
+
+ax.set_title("Distribusi Jumlah Hari Berdasarkan Musim")
+ax.set_xlabel("Musim")
+ax.set_ylabel("Jumlah Hari")
+
+# label angka
+for container in ax.containers:
+    ax.bar_label(container, fmt='%d')
+
+clean_chart(ax)
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Jumlah hari pada setiap musim relatif seimbang, sehingga perbedaan penyewaan lebih dipengaruhi oleh faktor musim, bukan jumlah data.
+""")
+# =========================
+# Boxplot per musim
+# =========================
+st.subheader("Distribusi Penyewaan per Musim")
+
+fig, ax = plt.subplots(figsize=(6,4))
+
+sns.boxplot(
+    data=filtered_day,
+    x="season_label",
+    y="cnt",
+    hue="season_label",
+    palette=season_colors,
+    legend=False,
+    ax=ax
+)
+
+ax.set_title("Distribusi Penyewaan per Musim")
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Penyewaan tertinggi terjadi pada Fall, dengan variasi yang cukup besar dibanding musim lainnya.
+""")
+# =========================
+# VIOLIN PLOT CUACA
+# =========================
+st.subheader("Distribusi Penyewaan per Cuaca")
+
+weather_colors = ["#A8DADC", "#FFE5B4", "#FFAFCC"]
+
+fig, ax = plt.subplots(figsize=(6,4))
+
+sns.violinplot(
+    data=filtered_day,
+    x="weather_label",
+    y="cnt",
+    hue="weather_label",
+    palette=weather_colors,
+    legend=False,
+    ax=ax
+)
+
+ax.set_title("Distribusi Penyewaan per Cuaca")
+ax.tick_params(axis='x', rotation=15)
+clean_chart(ax)
+
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Penyewaan tertinggi terjadi saat cuaca cerah, sementara kondisi cuaca buruk menurunkan jumlah penyewaan.
+""")
+
+# =========================
+# CASUAL VS REGISTERED
+# =========================
+st.subheader("Perbandingan Casual vs Registered")
+
+user_sum = filtered_day[["casual", "registered"]].sum()
+colors = ["#FFCAD4", "#A8DADC"]
+
+fig, ax = plt.subplots(figsize=(4.5, 4.5))
+ax.pie(
+    user_sum,
+    labels=user_sum.index,
+    autopct="%1.1f%%",
+    colors=colors,
+    startangle=90,
+    wedgeprops={"edgecolor": "white"}
+)
+ax.set_title("Perbandingan Casual vs Registered")
+st.pyplot(fig)
+
+st.markdown("""
+**Insight:** Pengguna registered mendominasi jumlah penyewaan sepeda,
+menunjukkan bahwa layanan lebih banyak digunakan oleh pelanggan tetap.
+""")
+
+# =========================
+# WORKING DAY VS WEEKEND
 # =========================
 st.subheader("Perbandingan Working Day vs Weekend/Holiday")
 
@@ -404,7 +625,7 @@ sedangkan pada weekend/holiday penyewaan cenderung meningkat pada siang hari.
 
 
 # =========================
-# 6. CLUSTERING PERMINTAAN
+# CLUSTERING PERMINTAAN
 # =========================
 st.subheader("Analisis Lanjutan: Cluster Permintaan")
 
@@ -444,7 +665,7 @@ menunjukkan tingkat permintaan penyewaan sepeda cukup stabil.
 
 
 # =========================
-# 7. BINNING WAKTU
+# BINNING WAKTU
 # =========================
 st.subheader("Analisis Lanjutan: Binning Waktu")
 
@@ -504,11 +725,13 @@ st.markdown("""
     line-height: 1.7;
 ">
     <ol>
-        <li>Pola penyewaan sepeda meningkat dari tahun 2011 ke 2012 dengan fluktuasi harian.</li>
+        <li>Pola penyewaan sepeda cenderungmeningkat dari tahun 2011 ke 2012 dengan fluktuasi harian.</li>
         <li>Jam sibuk penyewaan terjadi pada pagi dan sore hari, terutama pada working day.</li>
         <li>Musim Fall dan cuaca cerah memiliki rata-rata penyewaan tertinggi.</li>
         <li>Cluster permintaan relatif seimbang antara Low, Medium, dan High.</li>
         <li>Binning waktu menunjukkan bahwa sore hari merupakan kategori waktu dengan permintaan tertinggi.</li>
+        <li>Distribusi penyewaan sepeda cenderung berada pada kisaran menengah dengan pola yang mendekati normal, menunjukkan variasi permintaan yang cukup stabil.</li>
+        <li>Analisis korelasi menunjukkan bahwa temperatur dan jumlah pengguna registered memiliki pengaruh paling kuat terhadap peningkatan penyewaan sepeda.</li>
     </ol>
 </div>
 """, unsafe_allow_html=True)
